@@ -7,24 +7,23 @@
 //#define uart1 ((uart_inst_t * const)uart1_hw)
 
 #define UART_ID uart0
-#define BAUD_RATE 1200
+#define BAUD_RATE 9600
 #define DATA_BITS 8
 #define STOP_BITS 1
 #define PARITY    UART_PARITY_NONE
 #define UART0_IRQ 20
 #define LED_PIN 22
 
-void check_valid_command(char received_string, size_t string_length){
+void check_valid_command(const char *received_string, size_t string_length){
 
     //Turn on the diode
-    //if(strcmp(received_string,"1") == 0){
-    if(received_string == '1'){
+    if(strcmp(received_string,"Diode ON") == 0){
         gpio_put(LED_PIN,1);
         if(uart_is_writable(UART_ID))
             uart_puts(UART_ID,"Diode ON!");
     }
     //Turn off the diode
-    else if(received_string == '2'){
+    else if(strcmp(received_string,"Diode OFF") == 0){
         gpio_put(LED_PIN,0);
         if(uart_is_writable(UART_ID))
             uart_puts(UART_ID,"Diode OFF!");
@@ -40,34 +39,26 @@ void check_valid_command(char received_string, size_t string_length){
 void on_uart_rx() {
     char received_string[100]; 
     uint8_t received_char;
-    size_t chars_received = 0;
-    while (uart_is_readable_within_us(UART_ID,1000000000)) {
-        received_char = uart_getc(UART_ID);
+    size_t chars_received = 0; 
+    //Read whole buffer
+    while (uart_is_readable_within_us(UART_ID,10000)) {
+        received_string[chars_received] = uart_getc(UART_ID);
         chars_received++;
-        uart_putc_raw(UART_ID, received_char);
-        check_valid_command(received_char,chars_received);
-
-//        strcat(received_string, &received_char);
-
-//        if(chars_received<99)
-//            strcat(received_string, received_char);
-//        else
-//            break;
-        //if (uart_is_writable(UART_ID)) {
-        //    uart_putc_raw(UART_ID, ch);
     }
-    //received_string[chars_received] = '\0';
-    sleep_ms(1000);
-    //sprintf(received_string,"XD BEKE MAM");
-//    if(uart_is_writable(UART_ID))
-//        uart_puts(UART_ID,received);
+    //add null termination char
+    received_string[chars_received] = '\0';
+    //if(uart_is_writable(UART_ID))
+    //    uart_puts(UART_ID,received_string);
+
+    check_valid_command(received_string, chars_received);
+
 }
 
 
 
 int main()
 {
-    uart_init(UART_ID, 1200);
+    uart_init(UART_ID, 9600);
     gpio_set_function(0,GPIO_FUNC_UART);
     gpio_set_function(1,GPIO_FUNC_UART);
 
@@ -102,7 +93,10 @@ int main()
     // OK, all set up.
     // Lets send a basic string out, and then run a loop and wait for RX interrupts
     // The handler will count them, but also reflect the incoming data back with a slight change!
-    uart_puts(UART_ID, "AT");
+    //uart_puts(UART_ID, "AT+BAUD4");
+    //uart_puts(UART_ID, "AT+BAUD4");
+    //uart_puts(UART_ID, "AT+BAUD4");
+
 
     while (1)
         tight_loop_contents();
